@@ -43,7 +43,8 @@ export type Titulos = {
 };
 
 export type DatosCV = {
-  nombre: string;
+  nombres: string;
+  apellidos: string;
   enlaceNombre: string; // p. ej. LinkedIn; el nombre del documento enlaza aquí
   correo: string;
   telefono: string;
@@ -63,12 +64,27 @@ export const TITULOS_POR_DEFECTO: Titulos = {
   publicaciones: "Publicaciones",
 };
 
+// Nombre completo tal como sale en el CV y en el nombre del archivo.
+export function nombreCompleto(cv: { nombres: string; apellidos: string }): string {
+  return [cv.nombres.trim(), cv.apellidos.trim()].filter(Boolean).join(" ");
+}
+
+// «Alejandro Valentino Seminario Medina» → nombres «Alejandro Valentino», apellidos
+// «Seminario Medina». En español van dos apellidos al final; con dos palabras, una y una.
+export function dividirNombre(completo: string): { nombres: string; apellidos: string } {
+  const p = completo.trim().split(/\s+/).filter(Boolean);
+  if (p.length <= 1) return { nombres: p[0] ?? "", apellidos: "" };
+  const n = p.length === 2 ? 1 : p.length - 2;
+  return { nombres: p.slice(0, n).join(" "), apellidos: p.slice(n).join(" ") };
+}
+
 export function nuevoId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
 export const CV_VACIO: DatosCV = {
-  nombre: "",
+  nombres: "",
+  apellidos: "",
   enlaceNombre: "",
   correo: "",
   telefono: "",
@@ -119,7 +135,8 @@ export function normalizarCV(x: unknown): DatosCV {
   const modalidad = (v: unknown): Modalidad => ((MODALIDADES as readonly string[]).includes(texto(v)) ? (texto(v) as Modalidad) : "");
   const titulos = (o.titulos && typeof o.titulos === "object" ? o.titulos : {}) as Record<string, unknown>;
   return {
-    nombre: texto(o.nombre),
+    // Datos de antes de separar nombres y apellidos: el nombre completo se divide.
+    ...(texto(o.nombres) || texto(o.apellidos) ? { nombres: texto(o.nombres), apellidos: texto(o.apellidos) } : dividirNombre(texto(o.nombre))),
     enlaceNombre: texto(o.enlaceNombre),
     correo: texto(o.correo),
     telefono: texto(o.telefono),

@@ -61,8 +61,12 @@ export function FormularioRegistroCV() {
     <form action={enviar} className="ingreso__formulario" key={estado.mensaje}>
       <Error estado={estado} />
       <div className="campo">
-        <label htmlFor="cv-nombre">Nombre completo</label>
-        <input id="cv-nombre" name="nombre" autoComplete="name" required defaultValue={estado.nombre} />
+        <label htmlFor="cv-nombres">Nombres</label>
+        <input id="cv-nombres" name="nombres" autoComplete="given-name" required defaultValue={estado.nombres} />
+      </div>
+      <div className="campo">
+        <label htmlFor="cv-apellidos">Apellidos</label>
+        <input id="cv-apellidos" name="apellidos" autoComplete="family-name" required defaultValue={estado.apellidos} />
       </div>
       <CampoCorreo valor={estado.correo} />
       <div className="campo">

@@ -10,7 +10,7 @@
 //  - Páginas: se mide cada párrafo; el que no cabe pasa a la siguiente y los títulos se
 //    quedan con lo que les sigue.
 import { createContext, useContext, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { DatosCV } from "@/lib/cv/tipos";
+import { nombreCompleto, type DatosCV } from "@/lib/cv/tipos";
 import { empresaConRuc, fechasEducacion, fechasExperiencia, ubicacion } from "@/lib/cv/fechas";
 import { textoHabilidad } from "@/lib/cv/habilidades";
 import { useAlMontar } from "./animacion";
@@ -88,7 +88,8 @@ function bloques(cv: DatosCV): Bloque[] {
   const vineta = (clave: string, texto: string) =>
     b.push({ clave, clase: e.vineta, contenido: <Justificado texto={texto} ancho={ANCHO_TEXTO - SANGRIA_VINETA} /> });
 
-  if (cv.nombre.trim() || cv.enlaceNombre.trim()) b.push({ clave: "nombre", clase: e.nombre, contenido: cv.nombre });
+  const nombre = nombreCompleto(cv);
+  if (nombre || cv.enlaceNombre.trim()) b.push({ clave: "nombre", clase: e.nombre, contenido: nombre });
   const contacto = [cv.correo.trim(), cv.telefono.trim()].filter(Boolean);
   if (contacto.length) b.push({ clave: "contacto", clase: e.contacto, contenido: contacto.join(" • ") });
 

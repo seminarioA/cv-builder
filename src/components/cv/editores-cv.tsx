@@ -275,7 +275,10 @@ function FilasHabilidades({ g, s }: { g: GrupoHabilidades; s: (p: Partial<GrupoH
 export function EditorDatos({ cv, set }: Editor) {
   return (
     <>
-      <Campo etiqueta="Nombre completo" valor={cv.nombre} cambiar={(v) => set("nombre", v)} />
+      <div className={e.dosCampos}>
+        <Campo etiqueta="Nombres" valor={cv.nombres} cambiar={(v) => set("nombres", v)} placeholder="Alejandro Valentino" />
+        <Campo etiqueta="Apellidos" valor={cv.apellidos} cambiar={(v) => set("apellidos", v)} placeholder="Seminario Medina" />
+      </div>
       <Campo
         etiqueta="Enlace del nombre"
         tipo="url"

@@ -1,7 +1,7 @@
 // Plantillas del CV builder. Cada una tiene una base .docx en public/plantillas (servida en /cv-builder/plantillas)
 // (estilos, numeración y fuentes del original) y una función que arma su document.xml.
 // Para agregar una: su generador en src/lib/cv, su vista en src/components/cv y una entrada aquí.
-import type { DatosCV } from "./tipos.ts";
+import { nombreCompleto, type DatosCV } from "./tipos.ts";
 import { documentoHarvard, propiedades, relacionesConEnlaces } from "./harvard-docx.ts";
 import { escribirZip, leerZip } from "./zip.ts";
 
@@ -42,6 +42,6 @@ export async function armarDocx(base: Uint8Array, p: Plantilla, cv: DatosCV): Pr
 }
 
 export function nombreArchivo(cv: DatosCV, extension: string): string {
-  const limpio = cv.nombre.trim().replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ");
+  const limpio = nombreCompleto(cv).replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ");
   return `${limpio ? `CV - ${limpio}` : "CV"}.${extension}`;
 }

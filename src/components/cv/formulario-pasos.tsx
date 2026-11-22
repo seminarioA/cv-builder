@@ -30,7 +30,7 @@ const PASOS: Paso[] = [
     titulo: "Datos personales",
     bajada: "Cómo te llamas y cómo pueden contactarte.",
     Editor: EditorDatos,
-    hecho: (cv) => !!(cv.nombre && (cv.correo || cv.telefono)),
+    hecho: (cv) => !!(cv.nombres && cv.apellidos && (cv.correo || cv.telefono)),
   },
   { titulo: "Perfil", bajada: "Un resumen corto de quién eres profesionalmente.", Editor: EditorPerfil, hecho: (cv) => !!cv.perfil.trim() },
   { titulo: "Educación", bajada: "Tus estudios, del más reciente al más antiguo.", Editor: EditorEducacion, hecho: (cv) => cv.educacion.length > 0 },
@@ -86,7 +86,7 @@ export function FormularioPasos({
     setAviso(null);
     try {
       const nuevos = await importarDocx(new Uint8Array(await f.arrayBuffer()));
-      if (!nuevos.nombre && !nuevos.experiencia.length && !nuevos.educacion.length) throw new Error();
+      if (!nuevos.nombres && !nuevos.experiencia.length && !nuevos.educacion.length) throw new Error();
       setCv(nuevos);
       ir(1);
       setAviso({ tipo: "ok", texto: `Se rellenaron tus datos desde «${f.name}». Revísalos paso a paso; lo que falte, lo completas aquí.` });

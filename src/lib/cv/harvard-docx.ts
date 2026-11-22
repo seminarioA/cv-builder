@@ -3,7 +3,7 @@
 // numeración, fuentes incrustadas, encabezados) se copian tal cual de la base, así que Word
 // lo abre idéntico al original. Si cambias algo aquí, cambia también la vista previa
 // (src/components/cv/harvard.tsx), que reproduce estas mismas medidas.
-import type { DatosCV } from "./tipos.ts";
+import { nombreCompleto, type DatosCV } from "./tipos.ts";
 import { empresaConRuc, fechasEducacion, fechasExperiencia, ubicacion } from "./fechas.ts";
 import { textoHabilidad } from "./habilidades.ts";
 
@@ -96,10 +96,11 @@ export function documentoHarvard(cv: DatosCV): { documento: string; relaciones: 
   };
 
   // Nombre, con una línea debajo; enlaza al perfil si hay enlace.
-  if (cv.nombre.trim() || cv.enlaceNombre.trim()) {
+  const nombre = nombreCompleto(cv);
+  if (nombre || cv.enlaceNombre.trim()) {
     const ppr = `<w:pBdr><w:bottom w:val="single" w:sz="4" w:space="1" w:color="000000"/></w:pBdr>${LINEA}<w:ind w:left="0" w:hanging="2"/><w:jc w:val="center"/><w:rPr>${B}</w:rPr>`;
     const enlace = cv.enlaceNombre.trim();
-    const run = `<w:r><w:rPr><w:rStyle w:val="Hipervnculo"/>${B}<w:color w:val="auto"/><w:u w:val="none"/></w:rPr>${t(cv.nombre)}</w:r>`;
+    const run = `<w:r><w:rPr><w:rStyle w:val="Hipervnculo"/>${B}<w:color w:val="auto"/><w:u w:val="none"/></w:rPr>${t(nombre)}</w:r>`;
     p({
       ppr,
       runs: enlace
@@ -210,6 +211,7 @@ export function relacionesConEnlaces(base: string, enlaces: { id: string; destin
 }
 
 export function propiedades(cv: DatosCV, ahora = new Date()): string {
+  const nombre = nombreCompleto(cv);
   const fecha = ahora.toISOString().replace(/\.\d+Z$/, "Z");
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${esc(cv.nombre ? `CV - ${cv.nombre}` : "CV")}</dc:title><dc:creator>${esc(cv.nombre)}</dc:creator><cp:lastModifiedBy>${esc(cv.nombre)}</cp:lastModifiedBy><cp:revision>1</cp:revision><dcterms:created xsi:type="dcterms:W3CDTF">${fecha}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${fecha}</dcterms:modified></cp:coreProperties>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${esc(nombre ? `CV - ${nombre}` : "CV")}</dc:title><dc:creator>${esc(nombre)}</dc:creator><cp:lastModifiedBy>${esc(nombre)}</cp:lastModifiedBy><cp:revision>1</cp:revision><dcterms:created xsi:type="dcterms:W3CDTF">${fecha}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${fecha}</dcterms:modified></cp:coreProperties>`;
 }

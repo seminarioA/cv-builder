@@ -7,7 +7,7 @@ import { leerEmpresa, MESES } from "./fechas.ts";
 export { leerEmpresa };
 import { leerHabilidad } from "./habilidades.ts";
 import { MODALIDADES, type Modalidad } from "./lugares.ts";
-import { CV_VACIO, nuevaEducacion, nuevaExperiencia, nuevoId, TITULOS_POR_DEFECTO, type DatosCV, type Titulos } from "./tipos.ts";
+import { CV_VACIO, dividirNombre, nuevaEducacion, nuevaExperiencia, nuevoId, TITULOS_POR_DEFECTO, type DatosCV, type Titulos } from "./tipos.ts";
 
 type P = {
   texto: string;
@@ -114,8 +114,8 @@ export function cvDesdeParrafos(ps: P[]): DatosCV {
       continue;
     }
     if (seccion === "cabecera") {
-      if (!cv.nombre) {
-        cv.nombre = p.texto;
+      if (!cv.nombres && !cv.apellidos) {
+        Object.assign(cv, dividirNombre(p.texto));
         cv.enlaceNombre = p.campo || p.enlaces[0]?.destino || "";
         continue;
       }

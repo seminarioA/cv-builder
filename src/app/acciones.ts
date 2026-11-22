@@ -7,7 +7,7 @@ import { errorCorreo } from "@/lib/validacion";
 import { plantilla } from "@/lib/cv/plantillas";
 import type { DatosCV } from "@/lib/cv/tipos";
 
-export type EstadoCuenta = { estado: "inicial" | "error"; mensaje?: string; correo?: string; nombre?: string };
+export type EstadoCuenta = { estado: "inicial" | "error"; mensaje?: string; correo?: string; nombres?: string; apellidos?: string };
 
 const t = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 // Solo rutas internas del CV builder, para que «siguiente» no sirva para redirigir afuera.
@@ -19,16 +19,18 @@ const destino = (f: FormData) => {
 
 export async function registrar(_e: EstadoCuenta, f: FormData): Promise<EstadoCuenta> {
   const correo = t(f, "correo");
-  const nombre = t(f, "nombre");
+  const nombres = t(f, "nombres");
+  const apellidos = t(f, "apellidos");
   const clave = String(f.get("clave") ?? "");
-  const volver = { correo, nombre };
-  if (!nombre) return { estado: "error", mensaje: "Escribe tu nombre completo.", ...volver };
+  const volver = { correo, nombres, apellidos };
+  if (!nombres) return { estado: "error", mensaje: "Escribe tus nombres.", ...volver };
+  if (!apellidos) return { estado: "error", mensaje: "Escribe tus apellidos.", ...volver };
   const malCorreo = errorCorreo(correo);
   if (malCorreo) return { estado: "error", mensaje: malCorreo, ...volver };
   if (clave.length < 10 || clave.length > 200) return { estado: "error", mensaje: "La contraseña debe tener al menos 10 caracteres.", ...volver };
   const espera = await esperaPorIntentos("cv-registro", correo);
   if (espera) return { estado: "error", mensaje: `Demasiados intentos. Espera ${espera} min.`, ...volver };
-  if (!(await registrarCuenta(correo, nombre, clave))) {
+  if (!(await registrarCuenta(correo, nombres, apellidos, clave))) {
     await registrarFallo("cv-registro", correo);
     return { estado: "error", mensaje: "Ese correo ya tiene una cuenta. Ingresa con tu contraseña.", ...volver };
   }

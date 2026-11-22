@@ -5,13 +5,14 @@ import { readFileSync } from "node:fs";
 import { crc32, escribirZip, leerZip } from "../src/lib/cv/zip.ts";
 import { documentoHarvard } from "../src/lib/cv/harvard-docx.ts";
 import { armarDocx, plantilla } from "../src/lib/cv/plantillas.ts";
-import { CV_VACIO, normalizarCV, type DatosCV } from "../src/lib/cv/tipos.ts";
+import { CV_VACIO, dividirNombre, normalizarCV, type DatosCV } from "../src/lib/cv/tipos.ts";
 import { importarDocx, leerEmpresa, leerFechasMes, leerUbicacion } from "../src/lib/cv/importar-docx.ts";
 import { duracion, fechasEducacion, fechasExperiencia } from "../src/lib/cv/fechas.ts";
 import { leerHabilidad, textoHabilidad } from "../src/lib/cv/habilidades.ts";
 
 const CV_EJEMPLO: DatosCV = normalizarCV({
-  nombre: "María Quispe",
+  nombres: "María",
+  apellidos: "Quispe",
   enlaceNombre: "https://www.linkedin.com/in/ejemplo/",
   correo: "maria.quispe@correo.com",
   telefono: "+51 900 000 000",
@@ -66,7 +67,7 @@ test("cv: cada sección termina en un párrafo y la última en el cuerpo", () =>
 });
 
 test("cv: escapa el texto y agrega los enlaces", async () => {
-  const cv = { ...CV_EJEMPLO, nombre: "Ana <&> \"B\"" };
+  const cv = { ...CV_EJEMPLO, nombres: "Ana <&>", apellidos: "\"B\"" };
   const z = await leerZip(await armarDocx(base, plantilla("harvard"), cv));
   const doc = new TextDecoder().decode(z.get("word/document.xml"));
   assert.match(doc, /Ana &lt;&amp;&gt; &quot;B&quot;/);
@@ -121,4 +122,13 @@ test("cv: la empresa y el RUC van por separado; el RUC es opcional", () => {
   const { documento } = documentoHarvard(CV_EJEMPLO);
   assert.match(documento, /Empresa S\.A\.C\. \(RUC: 20123456789\)/);
   assert.match(documento, /<w:t>Universidad<\/w:t>/);
+});
+
+test("cv: nombres y apellidos por separado; los datos antiguos se dividen", () => {
+  assert.deepEqual(dividirNombre("Alejandro Valentino Seminario Medina"), { nombres: "Alejandro Valentino", apellidos: "Seminario Medina" });
+  assert.deepEqual(dividirNombre("Ana Quispe"), { nombres: "Ana", apellidos: "Quispe" });
+  const viejo = normalizarCV({ nombre: "María Fernanda Quispe Rojas" });
+  assert.equal(viejo.nombres, "María Fernanda");
+  assert.equal(viejo.apellidos, "Quispe Rojas");
+  assert.match(documentoHarvard(CV_EJEMPLO).documento, /<w:t>María Quispe<\/w:t>/);
 });

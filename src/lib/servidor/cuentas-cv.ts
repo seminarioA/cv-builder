@@ -32,14 +32,15 @@ async function abrirSesion(cuentaId: number) {
 }
 
 /** Crea la cuenta y abre la sesión. Devuelve false si el correo ya está registrado. */
-export async function registrarCuenta(correo: string, nombre: string, clave: string): Promise<boolean> {
+export async function registrarCuenta(correo: string, nombres: string, apellidos: string, clave: string): Promise<boolean> {
+  const nombre = `${nombres.trim()} ${apellidos.trim()}`.trim();
   const fila = await primera<{ id: number }>(
     "insert into cuentas_cv (correo, nombre, clave_hash) values ($1, $2, $3) on conflict (correo) do nothing returning id",
-    [correo.trim().toLowerCase(), nombre.trim(), await cifrarClave(clave)],
+    [correo.trim().toLowerCase(), nombre, await cifrarClave(clave)],
   );
   if (!fila) return false;
-  // El nombre de la cuenta arranca el CV.
-  await consultar("insert into datos_cv (cuenta_id, datos) values ($1, $2)", [fila.id, JSON.stringify({ ...CV_VACIO, nombre: nombre.trim() })]);
+  // Los nombres y apellidos de la cuenta arrancan el CV.
+  await consultar("insert into datos_cv (cuenta_id, datos) values ($1, $2)", [fila.id, JSON.stringify({ ...CV_VACIO, nombres: nombres.trim(), apellidos: apellidos.trim() })]);
   await abrirSesion(fila.id);
   return true;
 }
