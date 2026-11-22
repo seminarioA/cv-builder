@@ -7,9 +7,9 @@
 //  - Párrafos justificados: Word deja encoger los espacios hasta un 25 % antes de pasar una
 //    palabra a la línea siguiente (medido en Word con un documento de calibración). Por eso
 //    las líneas se cortan a mano y cada una se ajusta con word-spacing.
-//  - Páginas: se mide cada párrafo; el que no cabe pasa a la siguiente y los títulos se
-//    quedan con lo que les sigue.
-import { createContext, useContext, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+//  - Una sola hoja: se mide cada párrafo; los que no caben enteros (como en Word) quedan
+//    fuera y se avisa. Los títulos se quedan con lo que les sigue.
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { nombreCompleto, type DatosCV } from "@/lib/cv/tipos";
 import { empresaConRuc, fechasEducacion, fechasExperiencia, ubicacion } from "@/lib/cv/fechas";
 import { textoHabilidad } from "@/lib/cv/habilidades";
@@ -203,20 +203,38 @@ function paginar(lista: Bloque[], altos: number[], antes: number[]): number[][] 
   return paginas;
 }
 
-// Una hoja nueva (cuando el CV pasa a ocupar otra página) entra con animación.
-function Hoja({ escala, children }: { escala: number; children: ReactNode }) {
+// La hoja del CV (entra con animación si aparece después de cargar).
+function Hoja({ escala, desborda, children }: { escala: number; desborda: boolean; children: ReactNode }) {
   const animar = useAlMontar();
   return (
-    <div className={`${e.marco} ${animar ? e.hojaNueva : ""} cv-marco`} style={{ width: `${612 * escala}pt`, height: `${792 * escala}pt` }}>
+    <div
+      className={`${e.marco} ${animar ? e.hojaNueva : ""} cv-marco`}
+      data-desborda={desborda || undefined}
+      style={{ width: `${612 * escala}pt`, height: `${792 * escala}pt` }}
+    >
       {children}
     </div>
   );
 }
 
-export function VistaHarvard({ cv, escala = 1 }: { cv: DatosCV; escala?: number }) {
+export type Desborde = { parrafos: number; lineas: number } | null;
+
+// El formato es de una sola hoja: se muestra solo la primera, con los párrafos que caben
+// enteros (igual que Word). Lo que no cabe se informa con `alDesbordar` para avisar y no
+// permitir descargas que saldrían en dos hojas.
+export function VistaHarvard({
+  cv,
+  escala = 1,
+  alDesbordar,
+}: {
+  cv: DatosCV;
+  escala?: number;
+  alDesbordar?: (d: Desborde) => void;
+}) {
   const lista = useMemo(() => bloques(cv), [cv]);
   const medidor = useRef<HTMLDivElement>(null);
-  const [paginas, setPaginas] = useState<number[][]>([lista.map((_, i) => i)]);
+  const [hoja, setHoja] = useState<number[]>(lista.map((_, i) => i));
+  const [desborde, setDesborde] = useState<Desborde>(null);
   const [familia, setFamilia] = useState("");
 
   useLayoutEffect(() => {
@@ -234,8 +252,16 @@ export function VistaHarvard({ cv, escala = 1 }: { cv: DatosCV; escala?: number 
     if (nodos.length !== lista.length) return;
     const altos = nodos.map((n) => n.getBoundingClientRect().height);
     const antes = nodos.map((n) => parseFloat(getComputedStyle(n).paddingTop) || 0);
-    setPaginas(paginar(lista, altos, antes));
+    const [primera, ...resto] = paginar(lista, altos, antes);
+    const fuera = resto.flat();
+    const alto = fuera.reduce((s, i) => s + altos[i], 0);
+    setHoja(primera);
+    setDesborde(fuera.length ? { parrafos: fuera.length, lineas: Math.max(1, Math.round(alto / (13.8 * PX))) } : null);
   }, [lista, familia]);
+
+  useEffect(() => {
+    alDesbordar?.(desborde);
+  }, [desborde, alDesbordar]);
 
   return (
     <Fuente.Provider value={familia}>
@@ -248,21 +274,25 @@ export function VistaHarvard({ cv, escala = 1 }: { cv: DatosCV; escala?: number 
           ))}
         </div>
       </div>
-      {paginas.map((p, n) => (
-        <Hoja key={n} escala={escala}>
-          <div className={`${e.pagina} cv-pagina`} style={{ transform: escala === 1 ? undefined : `scale(${escala})` }}>
-            <div className={e.cuerpo}>
-              {p.map((i, j) =>
-                lista[i] ? (
-                  <div key={lista[i].clave} className={`${lista[i].clase} ${j === 0 ? e.arriba : ""}`}>
-                    {lista[i].contenido}
-                  </div>
-                ) : null,
-              )}
-            </div>
+      <Hoja escala={escala} desborda={!!desborde}>
+        <div className={`${e.pagina} cv-pagina`} style={{ transform: escala === 1 ? undefined : `scale(${escala})` }}>
+          <div className={e.cuerpo}>
+            {hoja.map((i, j) =>
+              lista[i] ? (
+                <div key={lista[i].clave} className={`${lista[i].clase} ${j === 0 ? e.arriba : ""}`}>
+                  {lista[i].contenido}
+                </div>
+              ) : null,
+            )}
           </div>
-        </Hoja>
-      ))}
+        </div>
+      </Hoja>
+      {desborde && (
+        <p className={e.corte} role="status" style={{ width: `${612 * escala}pt` }}>
+          No cabe en una hoja: quedan fuera {desborde.parrafos} {desborde.parrafos === 1 ? "párrafo" : "párrafos"} (unas{" "}
+          {desborde.lineas} {desborde.lineas === 1 ? "línea" : "líneas"}). Acorta el texto para descargar.
+        </p>
+      )}
     </Fuente.Provider>
   );
 }

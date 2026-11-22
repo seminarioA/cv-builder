@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Logo } from "@/components/logo";
-import { VistaHarvard } from "./harvard";
+import { VistaHarvard, type Desborde } from "./harvard";
 import {
   EditorDatos,
   EditorEducacion,
@@ -47,6 +47,9 @@ export function ConstructorCV({
   const [escala, setEscala] = useState(0.6);
   const [ocupado, setOcupado] = useState(false);
   const [aviso, setAviso] = useState("");
+  // El CV es de una sola hoja: si el contenido no cabe, no se descarga (saldría en dos).
+  const [desborde, setDesborde] = useState<Desborde>(null);
+  const bloqueo = desborde ? "Tu CV no cabe en una hoja. Acorta el texto para descargarlo." : undefined;
   const marco = useRef<HTMLDivElement>(null);
   const estado = useAutoguardado(cv, { plantilla: idPlantilla });
 
@@ -110,10 +113,10 @@ export function ConstructorCV({
           </button>
         </div>
         <div className={e.acciones}>
-          <button type="button" className="boton boton--secundario boton--chico" onClick={descargarPdf}>
+          <button type="button" className="boton boton--secundario boton--chico" onClick={descargarPdf} disabled={!!desborde} title={bloqueo}>
             PDF
           </button>
-          <button type="button" className="boton boton--chico" onClick={descargarWord} disabled={ocupado}>
+          <button type="button" className="boton boton--chico" onClick={descargarWord} disabled={ocupado || !!desborde} title={bloqueo}>
             {ocupado ? "Generando…" : "Word (.docx)"}
           </button>
         </div>
@@ -136,6 +139,12 @@ export function ConstructorCV({
             Editar mis datos paso a paso
           </Link>
           <TextoGuardado estado={estado} />
+          {desborde && (
+            <p className={e.error} role="status">
+              No cabe en una hoja: sobran unas {desborde.lineas} {desborde.lineas === 1 ? "línea" : "líneas"}. Acorta el perfil, los
+              logros o las habilidades para poder descargarlo.
+            </p>
+          )}
           {aviso && (
             <p className={e.error} role="alert">
               {aviso}
@@ -178,7 +187,7 @@ export function ConstructorCV({
       </aside>
 
       <main className={e.vista} ref={marco} aria-label="Vista previa del CV">
-        <div className={e.paginas}>{p.id === "harvard" && <VistaHarvard cv={cv} escala={escala} />}</div>
+        <div className={e.paginas}>{p.id === "harvard" && <VistaHarvard cv={cv} escala={escala} alDesbordar={setDesborde} />}</div>
       </main>
     </div>
   );
