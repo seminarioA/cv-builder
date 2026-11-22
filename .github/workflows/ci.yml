@@ -1,0 +1,91 @@
+name: Validar y publicar la imagen
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: imagen-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGEN: ghcr.io/seminarioa/cv-builder
+
+jobs:
+  validar:
+    name: Tipos y pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  imagen:
+    name: Compilar, probar contra PostgreSQL y publicar en GHCR
+    needs: validar
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Compilar la imagen
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          build-args: GIT_SHA=${{ github.sha }}
+          tags: cv:prueba
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Probar la imagen contra PostgreSQL
+        run: bash scripts/probar-imagen.sh cv:prueba
+      - name: Iniciar sesión en GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Publicar sha-${{ github.sha }} y main
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: GIT_SHA=${{ github.sha }}
+          tags: |
+            ${{ env.IMAGEN }}:sha-${{ github.sha }}
+            ${{ env.IMAGEN }}:main
+          cache-from: type=gha
+
+  # El despliegue lo hace el repositorio de infraestructura de Los Andes Labs, que tiene el
+  # acceso al VPS. Este paso solo le avisa que hay una imagen nueva (si existe el secreto).
+  avisar:
+    name: Pedir el despliegue en el VPS
+    if: github.event_name == 'push'
+    needs: imagen
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar el despliegue
+        env:
+          TOKEN: ${{ secrets.DESPLIEGUE_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::warning title=Despliegue no pedido::Falta el secreto DESPLIEGUE_TOKEN. La imagen sha-${{ github.sha }} quedó en GHCR."
+            exit 0
+          fi
+          curl -fsS -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/seminarioA/los-andes-labs/dispatches \
+            -d '{"event_type":"cv-builder","client_payload":{"etiqueta":"sha-${{ github.sha }}"}}'

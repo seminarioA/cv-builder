@@ -1,0 +1,146 @@
+/* Plantilla «Formato Harvard». Todas las medidas salen del .docx original (1 pt = 20 twips).
+   Tinos tiene las mismas métricas que Times New Roman: si el equipo no tiene Times, el texto
+   corta las líneas en los mismos lugares. */
+.pagina {
+  position: relative;
+  box-sizing: border-box;
+  width: 612pt;
+  height: 792pt;
+  padding: 27.95pt 56.7pt 0;
+  background: #fff;
+  color: #000;
+  font-family: "Times New Roman", var(--fuente-tinos), Tinos, serif;
+  font-size: 12pt;
+  line-height: 1.15;
+  font-kerning: none;
+  font-variant-ligatures: none;
+  hyphens: manual;
+  overflow-wrap: break-word;
+  text-align: left;
+  overflow: hidden;
+}
+
+.marco {
+  flex: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.marco > .pagina {
+  transform-origin: 0 0;
+}
+
+.medidor {
+  position: absolute;
+  left: -10000px;
+  top: 0;
+  visibility: hidden;
+  height: auto;
+  pointer-events: none;
+}
+
+.cuerpo > div {
+  white-space: pre-wrap;
+}
+
+/* Word dibuja el borde del párrafo 1,45 pt más allá de cada margen (medido en su PDF). */
+.nombre {
+  font-weight: 700;
+  text-align: center;
+  border-bottom: 0.5pt solid #000;
+  margin: 0 -1.45pt;
+  padding: 0 1.45pt 1pt;
+}
+
+.contacto {
+  text-align: center;
+  font-size: 11pt;
+}
+
+.titulo {
+  font-weight: 700;
+  text-align: center;
+  padding: 6pt 0;
+}
+
+.arriba.titulo {
+  padding-top: 0;
+}
+
+.justificado {
+  text-align: justify;
+}
+
+.negrita {
+  font-weight: 700;
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 36pt;
+  align-items: start;
+}
+
+.filaEdu {
+  column-gap: 28.35pt;
+}
+
+.derecha {
+  text-align: right;
+}
+
+.chico {
+  font-size: 11pt;
+}
+
+.vineta {
+  position: relative;
+  padding-left: 36pt;
+  text-align: justify;
+}
+
+/* El punto de la fuente Symbol tal como lo dibuja Word: 4,5 pt, medido en su PDF. */
+.vineta::before {
+  content: "";
+  position: absolute;
+  left: 18.3pt;
+  top: 6.75pt;
+  width: 4.5pt;
+  height: 4.5pt;
+  border-radius: 50%;
+  background: #000;
+}
+
+.izquierda {
+  text-align: left;
+}
+
+.enlace {
+  color: #0000ff;
+  text-decoration: underline;
+  text-decoration-thickness: from-font;
+}
+
+/* Una línea de un párrafo justificado, ya cortada como en Word (ver harvard.tsx). */
+.linea {
+  display: block;
+  white-space: pre;
+}
+
+/* Una hoja nueva entra; el tamaño de la vista previa cambia con transición al redimensionar. */
+@keyframes hojaNueva {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+.hojaNueva {
+  animation: hojaNueva 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hojaNueva {
+    animation: none;
+  }
+}

@@ -1,0 +1,943 @@
+/* CV builder: barra arriba, datos a la izquierda y vista previa a la derecha.
+   En pantallas angostas, pestañas para pasar de los datos a la vista previa.
+   Estilo del sitio de Los Andes Labs (al modo de Apple): fondo gris muy claro, tarjetas
+   blancas sin borde con esquinas amplias, barra translúcida con desenfoque, botones en
+   píldora, controles segmentados y la tipografía del sistema (SF en Apple). */
+.app,
+.asistente {
+  --capa-0: var(--fondo-alt);
+  --capa-1: var(--superficie);
+  --capa-hundida: color-mix(in srgb, var(--tinta) 5%, var(--superficie));
+  --capa-hover: color-mix(in srgb, var(--tinta) 7%, transparent);
+}
+
+.app {
+  display: grid;
+  grid-template-columns: minmax(340px, 420px) 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "barra barra" "lateral vista";
+  height: 100dvh;
+  background: var(--capa-0);
+  color: var(--tinta);
+  font-family: var(--f-texto);
+}
+
+.barra {
+  grid-area: barra;
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 52px;
+  padding: 8px max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px));
+  border-bottom: 1px solid var(--linea);
+  background: color-mix(in srgb, var(--capa-0) 80%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+.marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--tinta);
+  text-decoration: none;
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: var(--t-m);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.acciones {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.pestanas {
+  display: none;
+}
+
+.lateral {
+  grid-area: lateral;
+  overflow-x: hidden; /* lo que sale animado hacia el costado no muestra barra */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 16px 40px;
+  background: var(--capa-0);
+}
+
+/* Cada sección es una tarjeta agrupada, como los ajustes de iOS/macOS. */
+.seccion {
+  margin-bottom: 12px;
+  border-radius: var(--radio-tarjeta);
+  background: var(--capa-1);
+}
+
+.seccion > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 18px;
+  font-family: var(--f-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  list-style: none;
+}
+
+.seccion > summary::-webkit-details-marker {
+  display: none;
+}
+
+.seccion > summary::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid var(--tenue);
+  border-bottom: 1.5px solid var(--tenue);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 0.15s;
+}
+
+.seccion[open] > summary::after {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+
+.contenidoSeccion {
+  display: grid;
+  gap: 12px;
+  padding: 0 18px 18px;
+}
+
+.campo {
+  gap: 4px;
+}
+
+.etiqueta {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--tenue);
+}
+
+.campo textarea {
+  min-height: 0;
+}
+
+.dosCampos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.elemento {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--capa-hundida);
+}
+
+.cabeceraElemento {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cabeceraElemento > strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-s);
+}
+
+.herramientas {
+  display: flex;
+  gap: 2px;
+}
+
+.herramientas button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--tenue);
+  font: inherit;
+  cursor: pointer;
+}
+
+.herramientas button:hover:not(:disabled) {
+  background: var(--capa-hover);
+  color: var(--tinta);
+}
+
+.herramientas button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.herramientas .quitar:hover:not(:disabled) {
+  color: var(--alerta);
+}
+
+.agregar {
+  justify-self: start;
+}
+
+.plantillas {
+  display: grid;
+  gap: 8px;
+}
+
+.plantilla {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--capa-hundida);
+  cursor: pointer;
+}
+
+.plantilla[data-activa="true"] {
+  box-shadow: inset 0 0 0 2px var(--acento);
+}
+
+.plantilla input {
+  grid-row: span 2;
+  margin: 3px 0 0;
+  accent-color: var(--acento);
+}
+
+.plantilla span {
+  color: var(--tenue);
+  font-size: var(--t-xs);
+}
+
+.pieLateral {
+  display: grid;
+  gap: 6px;
+  padding-top: 16px;
+  color: var(--tenue);
+  font-size: var(--t-xs);
+}
+
+.pieLateral p {
+  margin: 0;
+}
+
+.pieLateral div {
+  display: flex;
+  gap: 16px;
+}
+
+.error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radio);
+  background: var(--alerta-suave);
+  color: var(--alerta);
+  font-size: var(--t-s);
+}
+
+.vista {
+  grid-area: vista;
+  overflow: auto;
+  border-left: 1px solid var(--linea);
+  background: color-mix(in srgb, var(--tinta) 4%, var(--capa-0));
+}
+
+.paginas {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 24px;
+  width: max-content;
+  min-width: 100%;
+  box-sizing: border-box;
+}
+
+
+/* ---------- Cuenta ---------- */
+.perfiles {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 18px;
+  border-radius: var(--radio-tarjeta);
+  background: var(--capa-1);
+}
+
+.perfiles > a {
+  justify-self: start;
+}
+
+.estado {
+  margin: 0;
+  color: var(--tenue);
+  font-size: var(--t-xs);
+}
+
+.estado a {
+  color: var(--acento);
+}
+
+.cuenta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cuenta > div {
+  display: grid;
+  min-width: 0;
+}
+
+.cuenta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--tenue);
+  font-size: var(--t-xs);
+}
+
+.exito {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radio);
+  background: var(--exito-suave);
+  color: var(--exito);
+  font-size: var(--t-s);
+}
+
+/* ---------- Mis datos: formulario por pasos ---------- */
+.asistente {
+  min-height: 100dvh;
+  background: var(--capa-0);
+  color: var(--tinta);
+  font-family: var(--f-texto);
+}
+
+.asistente .barra {
+  position: sticky;
+  top: 0;
+}
+
+.asistente .acciones {
+  align-items: center;
+  gap: 16px;
+}
+
+.asistenteCuerpo {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 680px);
+  justify-content: center;
+  gap: 32px;
+  padding: 32px max(16px, env(safe-area-inset-right, 0px)) 64px max(16px, env(safe-area-inset-left, 0px));
+}
+
+.pasos ol {
+  position: sticky;
+  top: 84px;
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pasos button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 980px;
+  background: transparent;
+  color: var(--tenue);
+  font: inherit;
+  font-size: var(--t-s);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pasos button:hover {
+  background: var(--capa-hover);
+}
+
+.pasos button[aria-current="step"] {
+  background: var(--capa-1);
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.numeroPaso {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border: 1.5px solid var(--linea-control);
+  border-radius: 50%;
+  font-size: var(--t-xs);
+  font-weight: 600;
+}
+
+.pasos button[aria-current="step"] .numeroPaso {
+  border-color: var(--acento);
+  background: var(--acento);
+  color: var(--acento-tinta);
+}
+
+.pasos button[data-hecho="true"]:not([aria-current="step"]) .numeroPaso {
+  border-color: var(--exito);
+  color: var(--exito);
+}
+
+.tarjetaPaso {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  overflow: clip; /* el contenido entra deslizándose desde un costado */
+  padding: 28px;
+  border-radius: var(--radio-tarjeta);
+  background: var(--capa-1);
+}
+
+.tarjetaPaso h1 {
+  margin: 0;
+  font-family: var(--f-display);
+  font-size: var(--t-xl);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  outline: none;
+}
+
+.contadorPaso {
+  margin: 0;
+  color: var(--tenue);
+  font-size: var(--t-xs);
+  font-weight: 600;
+}
+
+.bajadaPaso {
+  margin: 4px 0 8px;
+  color: var(--tenue);
+}
+
+.contenidoPaso {
+  display: grid;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.opcionesInicio {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.opcion {
+  display: grid;
+  gap: 4px;
+  padding: 18px 20px;
+  border: 0;
+  border-radius: var(--radio-tarjeta);
+  background: var(--capa-hundida);
+  color: var(--tinta);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.opcion:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 2px var(--acento);
+}
+
+.opcion span {
+  color: var(--tenue);
+  font-size: var(--t-s);
+}
+
+.navPaso {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.navPaso > :only-child {
+  margin-left: auto;
+}
+
+/* ---------- Lugar y fechas ---------- */
+.fila3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.fila3[data-modalidad="true"] > :last-child {
+  grid-column: 1 / -1;
+}
+
+.conBoton {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.conBoton > input {
+  flex: 1;
+  min-width: 0;
+}
+
+.conBoton > button {
+  flex: none;
+  width: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--capa-hundida);
+  color: var(--tenue);
+  cursor: pointer;
+}
+
+.intervalo {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.mesAño {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mesAño select {
+  padding-left: 8px !important;
+  padding-right: 4px !important;
+}
+
+.guion {
+  color: var(--tenue);
+}
+
+.actualidad {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--radio);
+  background: var(--capa-1);
+  color: var(--acento);
+  font-weight: 600;
+}
+
+.casillas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: var(--t-s);
+}
+
+.casillas label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.casillas input {
+  accent-color: var(--acento);
+}
+
+.aviso {
+  color: var(--alerta);
+  font-size: var(--t-xs);
+}
+
+/* ---------- Habilidades ---------- */
+.habilidades {
+  display: grid;
+  gap: 8px;
+}
+
+.habilidad {
+  gap: 6px;
+  padding: 8px;
+  border-radius: 14px;
+  background: var(--capa-1);
+}
+
+.habilidadNombre {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 136px auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.habilidad[data-blanda="true"] .habilidadNombre {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.habilidad .herramientas button {
+  width: 26px;
+}
+
+@media (max-width: 860px) {
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-areas: "barra" "lateral";
+  }
+  .app[data-vista="vista"] {
+    grid-template-areas: "barra" "vista";
+  }
+  .app[data-vista="datos"] .vista,
+  .app[data-vista="vista"] .lateral {
+    display: none;
+  }
+  .lateral {
+    border-right: 0;
+  }
+  .barra {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .pestanas {
+    display: flex;
+    order: 3;
+    width: 100%;
+    padding: 2px;
+    border-radius: 10px;
+    background: var(--capa-hundida);
+  }
+  .pestanas button {
+    flex: 1;
+    min-height: 34px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--tinta);
+    font: inherit;
+    font-size: var(--t-s);
+    cursor: pointer;
+  }
+  .pestanas button[aria-selected="true"] {
+    background: var(--capa-1);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  }
+  .paginas {
+    padding: 16px;
+    gap: 16px;
+  }
+  .dosCampos {
+    grid-template-columns: 1fr;
+  }
+  .asistenteCuerpo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    padding-top: 16px;
+  }
+  .pasos ol {
+    position: static;
+    display: flex;
+    overflow-x: auto;
+  }
+  .pasos button {
+    white-space: nowrap;
+  }
+  .tarjetaPaso {
+    padding: 20px 16px;
+  }
+}
+
+/* Al imprimir (Descargar PDF) solo salen las páginas, a tamaño real. */
+@page {
+  size: letter;
+  margin: 0;
+}
+
+@media print {
+  .app {
+    display: block;
+    height: auto;
+    background: none;
+  }
+  .barra,
+  .lateral {
+    display: none !important;
+  }
+  .vista {
+    display: block !important;
+    overflow: visible;
+    background: none;
+  }
+  .paginas {
+    display: block;
+    padding: 0;
+    width: auto;
+  }
+  .paginas :global(.cv-marco) {
+    width: auto !important;
+    height: auto !important;
+    box-shadow: none;
+    break-after: page;
+  }
+  .paginas :global(.cv-marco:last-child) {
+    break-after: auto;
+  }
+  .paginas :global(.cv-pagina) {
+    transform: none !important;
+  }
+}
+
+/* ---------- Animaciones de cambio de estado ----------
+   Todo lo que cambia de A a B lo hace con transición: lo que aparece entra, lo que se quita
+   sale, lo que se mueve se desliza (animacion.ts), las secciones se abren y cierran con altura,
+   y los pasos del formulario entran desde el lado hacia el que se avanzó. */
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+}
+
+@keyframes entrarSuave {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+
+@keyframes salir {
+  to {
+    opacity: 0;
+    transform: translateX(12px) scale(0.97);
+  }
+}
+
+@keyframes desdeDerecha {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+@keyframes desdeIzquierda {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+
+.app,
+.asistente {
+  interpolate-size: allow-keywords;
+}
+
+.lista {
+  display: grid;
+  gap: 12px;
+}
+
+.filaAnimada {
+  min-width: 0;
+}
+
+.entra {
+  animation: entrar 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.entraSuave {
+  animation: entrarSuave 0.2s ease-out both;
+}
+
+.saliendo {
+  animation: salir 0.18s ease-in forwards;
+  pointer-events: none;
+}
+
+.pasoAdelante {
+  animation: desdeDerecha 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.pasoAtras {
+  animation: desdeIzquierda 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.contenidoTarjeta {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+}
+
+/* Secciones plegables: abren y cierran animando la altura (donde el navegador lo permite). */
+.seccion::details-content {
+  block-size: 0;
+  overflow: clip;
+  opacity: 0;
+  transition:
+    block-size 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.2s ease,
+    content-visibility 0.28s allow-discrete;
+}
+
+.seccion[open]::details-content {
+  block-size: auto;
+  opacity: 1;
+}
+
+.seccion > summary {
+  transition: color 0.15s;
+}
+
+.seccion > summary:hover {
+  color: var(--acento);
+}
+
+/* Avisos, errores y estados que aparecen. */
+.error,
+.exito,
+.aviso {
+  animation: entrarSuave 0.22s ease-out both;
+}
+
+.estado {
+  transition: color 0.2s;
+}
+
+.estado[data-estado="guardado"] {
+  color: var(--exito);
+}
+
+.estado[data-estado="error"] {
+  color: var(--alerta);
+}
+
+/* Controles: hover, foco y selección cambian con transición. */
+.herramientas button,
+.conBoton > button,
+.pestanas button,
+.pasos button,
+.opcion,
+.plantilla,
+.casillas label {
+  transition:
+    background-color 0.18s,
+    color 0.18s,
+    border-color 0.18s,
+    box-shadow 0.18s,
+    opacity 0.18s,
+    transform 0.12s;
+}
+
+.herramientas button:active:not(:disabled),
+.conBoton > button:active {
+  transform: scale(0.94);
+}
+
+.opcion:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.numeroPaso {
+  transition:
+    background-color 0.25s,
+    border-color 0.25s,
+    color 0.25s,
+    transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.pasos button[aria-current="step"] .numeroPaso {
+  transform: scale(1.08);
+}
+
+.campo :is(input, select, textarea) {
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background-color 0.15s;
+}
+
+.actualidad {
+  transition: background-color 0.2s;
+}
+
+/* Celular: al cambiar entre Datos y Vista previa, el panel nuevo entra. */
+@media (max-width: 860px) {
+  .app[data-vista="datos"] .lateral,
+  .app[data-vista="vista"] .vista {
+    animation: entrarSuave 0.22s ease-out;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app *,
+  .app *::before,
+  .app *::after,
+  .app *::details-content,
+  .asistente *,
+  .asistente *::details-content {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* La barra de «Mis datos» queda en una línea: el estado de guardado se recorta si no cabe. */
+.asistente .barra {
+  flex-wrap: nowrap;
+}
+
+.asistente .acciones {
+  min-width: 0;
+}
+
+.asistente .acciones .estado {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Inicio y fin de las fechas: lado a lado si hay espacio; uno debajo del otro en la barra
+   lateral, para que el mes y el año se lean completos. */
+.campo {
+  container-type: inline-size;
+}
+
+@container (max-width: 440px) {
+  .intervalo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  .guion {
+    display: none;
+  }
+}
+
+/* Empresa y RUC en una fila: el RUC es más corto. Se apilan si no hay espacio. */
+.empresaRuc {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 0.55fr);
+  gap: 10px;
+}
+
+@media (max-width: 860px) {
+  .empresaRuc {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
